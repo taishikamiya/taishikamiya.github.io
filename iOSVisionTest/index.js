@@ -121,5 +121,5 @@ function draw() {
 
 //  renderStart();
 
-  requestAnimationFrame(draw);
+//  requestAnimationFrame(draw);
 }
