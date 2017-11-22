@@ -1,0 +1,345 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html ng-app="VisionApiExample">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		
+		<!-- Angular Material CSS now available via Google CDN; version 1.0.0 used here -->
+		<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.css">
+		
+		<title>VISION APIサンプル</title>
+	</head>
+
+	<body style="background-color: f1f1f1">
+		<!-- Angular Material Dependencies -->
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-animate.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-aria.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-messages.min.js"></script>
+		
+		<!-- Angular Material Javascript now available via Google CDN; version 1.0.0 used here -->
+		<script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.js"></script>
+
+		<script src="https://code.jquery.com/jquery-latest.js"></script>
+		
+		<!-- AngularJS setting -->
+		<script type="text/javascript">
+		
+			var APP = angular.module("VisionApiExample", ["ngMaterial","ngAnimate"]);
+			var VISION_API_URL = "https://vision.googleapis.com/v1/images:annotate?key=";
+			var HAS_GET_USER_MEDIA = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia; // Webカメラ対応かどうか確認
+			
+			APP.controller("FormCtrl", [ "$scope", "$http", function($scope, $http) {
+				
+				$scope.apiKey = "";
+				$scope.filming = false; // trueの時、Webカメラで撮影中
+				$scope.captureProcessId = null;
+				// 感情の可能性。パーセンテージは私が勝手に決めています。
+				$scope.decisions = {
+						"UNKNOWN":"判定不能",
+						"VERY_UNLIKELY":"可能性1%",
+						"UNLIKELY":"可能性25%",
+						"POSSIBLE":"可能性50%",
+						"LIKELY":"可能性75%",
+						"VERY_LIKELY":"可能性99%"}
+				
+				// Webカメラ撮影開始
+				$scope.localMediaStream = null;
+				// startFilming関数は「START」ボタンのクリックイベントになっています。
+				$scope.startFilming = function() {
+					if (!HAS_GET_USER_MEDIA) {
+						alert("Webカメラ未対応のブラウザです。");
+						return;
+					}
+					
+					if (!$scope.apiKey) {
+						alert("APIキーを入力して下さい")
+						return;
+					}
+					
+					if ($scope.filming === true) {
+						// Webカメラ起動中の場合は処理は行ないません。
+						return;
+					}
+					
+					var webCamera = document.getElementById('webCamera');
+					window.URL = window.URL || window.webkitURL;
+					navigator.getUserMedia  = HAS_GET_USER_MEDIA;
+					navigator.getUserMedia({video: true}, function(stream) {
+						// WebカメラのLocalMediaStreamオブジェクトからURLを作成し、
+						// videoのソースにそのURLを指定します。
+						webCamera.src = window.URL.createObjectURL(stream);
+						$scope.localMediaStream = stream;
+						$scope.filming = true; // Webカメラ起動中にフラグを立てます。
+						// STEP2の動画のキャプチャ画像の取得処理を1000ミリ秒間隔で実行するようにします。
+						$scope.captureProcessId = setInterval($scope.capture,1000)
+					// onFailed関数はWebカメラが起動が起動できなかった場合のエラー処理です。
+					}, onFailed);
+				}
+				
+				// Webカメラ起動エラー時の処理
+				var onFailed = function(e) {
+					// Webカメラが起動できなければエラーのアラートを出します。
+					alert("Webカメラがないか、未対応のブラウザです。\nエラー内容:" + e);
+					console.log('エラー!', e);
+				};
+				
+				// Webカメラの停止
+				// stopFilming関数は「STOP」ボタンのクリックイベントになっています。
+				$scope.stopFilming = function() {
+					$scope.filming = false;
+					if (!$scope.localMediaStream) {
+						return;
+					}
+					// Webカメラを停止させるためにはvideoエレメントのpause関数を呼びます。
+					document.getElementById('webCamera').pause()
+				}
+
+				// Webカメラが起動したら動画をキャプチャし、顔を四角い枠で囲う。
+				$scope.capture = function() {
+					
+					if ($scope.filming != true || !$scope.localMediaStream) {
+						clearInterval($scope.captureProcessId)
+						return;
+					}
+					
+					var webCamera = document.getElementById('webCamera');　// Webカメラの表示エレメントを取得します。
+					var vw = webCamera.videoWidth // Webカメラのビデオの横幅を取得します。
+					var hw = webCamera.videoHeight // Webカメラのビデオの縦幅を取得します。
+					$("#webCameraPic").attr("width", vw);// 顔を四角で囲う枠を表示するcanvasの横幅にWebカメラの横幅を設定します。
+					$("#webCameraPic").attr("height", hw);// 顔を四角で囲う枠を表示するcanvasの縦幅にWebカメラの縦幅を設定します。
+					$("#webCameraPicTemp").attr("width", vw);// Webカメラのキャプチャ画像の生成用非表示canvasの横幅にWebカメラの横幅を設定します。
+					$("#webCameraPicTemp").attr("height", hw);// Webカメラのキャプチャ画像の生成用非表示canvasの縦幅にWebカメラの縦幅を設定します。
+					
+					var position = $("#webCamera").position();
+					var scrollTop = $("#result").scrollTop();
+					$("#webCameraPic").css("top", position.top + scrollTop);
+					
+					var webCameraPicTemp = document.getElementById('webCameraPicTemp');
+					var webCameraPicTempCtx = webCameraPicTemp.getContext('2d');
+					webCameraPicTempCtx.clearRect(0, 0, webCameraPicTemp.width, webCameraPicTemp.height);
+					
+					if ($scope.localMediaStream) {
+						// 前回キャプチャした時の四角い枠の画像が残っているので、描画をクリアします。
+						var webCameraPic = document.getElementById('webCameraPic');
+						var webCameraPicCtx = webCameraPic.getContext('2d');
+						webCameraPicCtx.clearRect(0, 0, webCameraPic.width, webCameraPic.height);
+
+						// Webカメラのキャプチャ画像を非表示canvasに描画します。
+						webCameraPicTempCtx.drawImage(webCamera, 0, 0, webCameraPicTemp.width, webCameraPicTemp.height);
+						var base64FileData = webCameraPicTemp.toDataURL('image/webp');
+						
+						// キャプチャ画像で顔検知処理に渡します。
+						$scope.faceDetection('webCameraPic', base64FileData.split("base64,")[1]);
+					}
+				}
+				
+				
+
+				
+				$scope.canvasId = null;
+				// 顔検知処理
+				$scope.faceDetection = function(canvasId, base64FileData) {
+
+					if (!base64FileData) {
+						// 画像データが無ければアラートを表示して終了します。
+						alert("キャプチャデータがありません。")
+						return;
+					}
+					$scope.canvasId = canvasId;
+					
+					// Vision APIへのリクエストデータを作成。
+					// imageのcontextにBase64エンコードした画像データを設定します。
+					// featuresのtypeに顔検知機能の値である'FACE_DETECTION'を設定します。
+					// typeを変えることによって、ロゴやOCRなどの他の機能を使うことができます。
+					// featuresのmaxResultsには1以上の数値を設定しましょう。
+					var data = {
+									"requests":[
+										{
+											"image":{
+												"content": base64FileData
+											},
+											"features":[
+												{
+													"type":"FACE_DETECTION",
+													"maxResults":100
+												}
+											]
+										}
+									],
+								}
+					
+					// Vision APIのエンドポイントにPOSTします。
+					$http.post(VISION_API_URL + $scope.apiKey, data).success(function(data, status, headers, config) {
+						console.log("success")
+						console.log(data)
+						
+						var cvs = document.getElementById($scope.canvasId);
+						var ctx = cvs.getContext("2d");
+						
+						var responses = data.responses;
+						angular.forEach(responses, function(response, key) {
+							$scope.faceAnnotations = response.faceAnnotations;
+							if ($scope.faceAnnotations) {
+								angular.forEach($scope.faceAnnotations, function(faceAnnotation, key) {
+									// 頭を含む座標情報を取得します。
+									var boundingPolyVertices = faceAnnotation.boundingPoly.vertices;
+									// 顔を囲う四角い枠を描画します。
+									var result = drawLine(boundingPolyVertices, ctx, $scope.colors[key]["VERY_LIKELY"]);
+									if (result == 1) {
+										// 頭を含む顔全体を認識できなかったら、頭を含まない顔の部分だけの座標情報を取得します。
+										var fdBoundingPolyVertices = faceAnnotation.fdBoundingPoly.vertices;
+										result = drawLine(fdBoundingPolyVertices, ctx, $scope.colors[key]["VERY_LIKELY"]);
+									}
+								})
+							}
+						})
+						
+						$scope.canvasId = null;
+						
+					}).error(function(data, status, headers, config) {
+						console.log("error")
+						console.log(data)
+						$scope.canvasId = null;
+					});
+				}
+				
+				function drawLine(vertices, ctx, strokeStyle) {
+					// 顔を囲む4点座標を取り出します。
+					var x1 = vertices[0].x;
+					var y1 = vertices[0].y;
+					var x2 = vertices[1].x;
+					var y2 = vertices[1].y;
+					var x3 = vertices[2].x;
+					var y3 = vertices[2].y;
+					var x4 = vertices[3].x;
+					var y4 = vertices[3].y;
+					
+					if (x1 && y1 && x2 && y2 && x3 && y3 && x4 && y4) {
+						// 4点の位置情報が取れたら、各座標間に線を描画します。
+						ctx.beginPath();
+						
+						ctx.moveTo(x1, y1);
+						ctx.lineTo(x2, y2);
+						ctx.moveTo(x2, y2);
+						ctx.lineTo(x3, y3);
+						ctx.moveTo(x3, y3);
+						ctx.lineTo(x4, y4);
+						ctx.moveTo(x4, y4);
+						ctx.lineTo(x1, y1);
+						
+						ctx.lineWidth = 3;
+						ctx.strokeStyle = strokeStyle;
+						ctx.stroke();
+						return 0;
+					}
+					
+					// 座標が取れなかったら、描画しません。
+					return 1;
+				}
+				
+				// 15色生成する
+				$scope.colors = [];
+				$scope.baseColors = ["FFA07A","EE82EE","D2B48C","7B68EE","ADFF2F","B0C4DE","98FB98","5F9EA0","00CED1","48D1CC","778899","F0E68C","4169E1","FFDAB9","BC8F8F"];
+				for (var i=0; i<$scope.baseColors.length; i++) {					
+					var color = {"UNKNOWN": '#'+$scope.baseColors[i], "VERY_UNLIKELY": '#'+$scope.baseColors[i], "UNLIKELY": '#'+$scope.baseColors[i], "POSSIBLE": '#'+$scope.baseColors[i], "LIKELY": '#'+$scope.baseColors[i], "VERY_LIKELY": '#'+$scope.baseColors[i]};
+					$scope.colors.push(color);
+				}
+				
+				$scope.zeroPaddingNum = function(n) {
+					if (n < 10) {
+						return "0000" + n;
+					}
+					return "000" + n;
+				}
+			}]);
+			
+		</script>
+		
+		<style type="text/css">
+		<!--
+			.side-padding16 {padding: 0 16px 0 16px;}
+			.err-message {font-size: 12px; color: red}
+			.spacer-left {margin-left: 30px}
+			thead tr td {background-color: #CAE8E8}
+			td {padding: 5px}
+		-->
+		</style>
+
+		<div ng-controller="FormCtrl" layout="row" layout-align="center" flex="100">
+			<md-card flex="80" class="md-whiteframe-5dp" style="height:95%">
+				<md-toolbar>
+					<div class="md-toolbar-tools">
+						<h2>顔検知サンプル</h2>
+					</div>
+				</md-toolbar>
+				
+				<md-tabs md-dynamic-height md-border-bottom>
+					<md-tab label="Webカメラ">
+						<md-card-content >
+							<form novalidate>
+								<section>
+									<div class="side-padding16" layout="row">
+										<p>APIキーを入力し、STARTボタンを押すとWebカメラが起動して顔検知を始めます。</p>
+									</div>
+									<div class="side-padding16" layout="row" >
+										<md-input-container  flex="30">
+											<label>APIキー</label>
+											<input ng-model="apiKey">
+										</md-input-container>
+										<md-input-container>
+											<md-button class="md-default md-raised" ng-click="startFilming()">
+												START
+											</md-button>
+											<md-button class="md-default md-raised" ng-click="stopFilming()">
+												STOP
+											</md-button>
+										</md-input-container>
+									</div>
+									<hr size="1" color="#000000">
+								</section>
+							</form>
+						</md-card-content>
+					</md-tab>
+				</md-tabs>
+				
+				<md-content id="result">
+					<div class="side-padding16" >
+						<div>・表情から読み取れる感情等の予測結果</div>
+						<table border="1" cellspacing="0" cellpadding="0" flex="70">
+							<thead>
+								<tr>
+									<td flex="10">No.</td>
+									<td flex="15">喜び</td>
+									<td flex="15">悲しみ</td>
+									<td flex="15">怒り</td>
+									<td flex="15">驚き</td>
+									<td flex="15">着帽</td>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="faceAnnotation in faceAnnotations">
+									<td ng-style="{color: colors[$index]['VERY_LIKELY']}" flex="10" style="font-weight: bold;">{{zeroPaddingNum($index + 1)}}</td>
+									<td ng-style="{color: colors[$index][faceAnnotation.joyLikelihood]}" flex="15">{{decisions[faceAnnotation.joyLikelihood]}}</td>
+									<td ng-style="{color: colors[$index][faceAnnotation.sorrowLikelihood]}" flex="15">{{decisions[faceAnnotation.sorrowLikelihood]}}</td>
+									<td ng-style="{color: colors[$index][faceAnnotation.angerLikelihood]}" flex="15">{{decisions[faceAnnotation.angerLikelihood]}}</td>
+									<td ng-style="{color: colors[$index][faceAnnotation.surpriseLikelihood]}" flex="15">{{decisions[faceAnnotation.surpriseLikelihood]}}</td>
+									<td ng-style="{color: colors[$index][faceAnnotation.headwearLikelihood]}" flex="15">{{decisions[faceAnnotation.headwearLikelihood]}}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<br>
+					<!-- Webカメラの表示エリア -->
+					<div class="side-padding16" style="padding-bottom: 16px" layout="row" id="webCameraPart">
+						<video id="webCamera" autoplay style="z-index: 1;"></video>
+						<canvas id="webCameraPic" alt="NO IMAGE" class="" style="left:0; position: absolute; z-index: 100; background-color: transparent"></canvas>
+						<canvas id="webCameraPicTemp" alt="NO IMAGE" style="display:none"></canvas>
+					</div>
+				</md-content>
+
+			</md-card>
+
+		</div>
+
+	</body>
+</html>
