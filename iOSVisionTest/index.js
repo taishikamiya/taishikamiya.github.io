@@ -3,14 +3,12 @@
           exact : "environment"
         }
       }},*/
-const medias = {audio : false, video : true};
+const medias = {audio : false, video : true},
+      video  = document.getElementById("video"),
+      canvas = document.getElementById("canvas"),
+      ctx    = canvas.getContext("2d");
 
-//      video  = document.getElementById("video"),
-//      canvas = document.getElementById("canvas"),
-//      ctx    = canvas.getContext("2d");
-
-//navigator.getUserMedia(medias, successCallback, errorCallback);
-navigator.getUserMedia(medias,  function(stream) {   renderStart(); }, errorCallback);
+navigator.getUserMedia(medias, successCallback, errorCallback);
 
 requestAnimationFrame(draw);
 
@@ -49,9 +47,9 @@ var sendFacePP = function(canvas, func, errFunc){
 
 var renderStart = function() {
 //          if (localMediaStream) {
-                  var canvas = document.getElementById('canvas');
+//                  var canvas = document.getElementById('canvas');
                   //canvasの描画モードを2sに
-                  var ctx = canvas.getContext('2d');                                                                                                                                        
+  //                var ctx = canvas.getContext('2d');                                                                                                                                        
                   var img = document.getElementById('img');
                   var sending = false
                   var faceData = { "responses" : [] };
@@ -119,7 +117,7 @@ function draw() {
   canvas.height = window.innerHeight;
   ctx.drawImage(video, 0, 0);
 
-//  renderStart();
+  renderStart();
 
   requestAnimationFrame(draw);
 }
