@@ -119,7 +119,7 @@ function draw() {
   canvas.height = window.innerHeight;
   ctx.drawImage(video, 0, 0);
 
-  renderStart();
+//  renderStart();
 
   requestAnimationFrame(draw);
 }
