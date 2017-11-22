@@ -3,7 +3,7 @@ $(function() {
     var  video  = document.getElementById("video"),
 //	var video = document.getElementById('camera');
 	//カメラが起動できたかのフラグ
-	var localMediaStream = null;
+//	var localMediaStream = null;
 	//カメラ使えるかチェック
 	var hasGetUserMedia = function() {
 		return (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
