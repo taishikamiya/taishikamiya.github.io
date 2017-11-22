@@ -3,14 +3,14 @@
           exact : "environment"
         }
       }},*/
-const medias = {audio : false, video : true},
-      function(stream) {   renderStart(); };
+const medias = {audio : false, video : true};
 
 //      video  = document.getElementById("video"),
 //      canvas = document.getElementById("canvas"),
 //      ctx    = canvas.getContext("2d");
 
-navigator.getUserMedia(medias, successCallback, errorCallback);
+//navigator.getUserMedia(medias, successCallback, errorCallback);
+navigator.getUserMedia(medias,  function(stream) {   renderStart(); }, errorCallback);
 
 requestAnimationFrame(draw);
 
