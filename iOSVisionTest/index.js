@@ -4,10 +4,10 @@
         }
       }},*/
 const medias = {audio : false, video : true},
-      function(stream) {   renderStart(); },
-      video  = document.getElementById("video"),
-      canvas = document.getElementById("canvas"),
-      ctx    = canvas.getContext("2d");
+      function(stream) {   renderStart(); };
+//      video  = document.getElementById("video"),
+//      canvas = document.getElementById("canvas"),
+//      ctx    = canvas.getContext("2d");
 
 navigator.getUserMedia(medias, successCallback, errorCallback);
 
