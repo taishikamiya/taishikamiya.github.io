@@ -44,6 +44,10 @@
                 ctx = canvas.getContext("2d");
             requestAnimationFrame(draw);
     
+            function searchImage(searchText){
+                console.log(searchText);
+            }
+
             function draw() {
                 canvas.width = 300;
                 canvas.height = 100;
@@ -119,7 +123,6 @@
                         var msg = document.createElement('div');
 //                        msg.innerHTML = result.text;
                         msg.innerHTML = result.text;
-                        msg.innerHTML = result.words(1);
                         numdiv.appendChild(msg);
                         num += 1;
                     });
