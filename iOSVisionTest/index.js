@@ -6,7 +6,9 @@
 const medias = {audio : false, video : true},
       video  = document.getElementById("video"),
       canvas = document.getElementById("canvas"),
-      ctx    = canvas.getContext("2d");
+      ctx    = canvas.getContext("2d"),
+      img = document.getElementById("img");
+  
 
 navigator.getUserMedia(medias, successCallback, errorCallback);
 
@@ -50,7 +52,7 @@ var renderStart = function() {
                   var canvas = document.getElementById('canvas');
                   //canvasの描画モードを2sに
                   var ctx = canvas.getContext('2d');                                                                                                                                        
-                  var img = document.getElementById('img');
+  //                var img = document.getElementById('img');
                   var sending = false
                   var faceData = { "responses" : [] };
                   var render = function() {
