@@ -104,13 +104,27 @@ $(function() {
         if(!hasGetUserMedia()) {
                 alert("未対応ブラウザです。");
         } else {
-                window.URL = window.URL || window.webkitURL;
-                navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-                navigator.getUserMedia({audio: false, video: true}, function(stream) {
-                        video.src = window.URL.createObjectURL(stream);
-                        localMediaStream = stream;
-                        renderStart();
-                }, onFailSoHard);
+//                window.URL = window.URL || window.webkitURL;
+//                navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+//                navigator.getUserMedia({audio: false, video: true}, function(stream) {
+//                        video.src = window.URL.createObjectURL(stream);
+//                        localMediaStream = stream;
+//                        renderStart();
+//                }, onFailSoHard);
+                const medias = {audio : false, video : true},
+                video  = document.getElementById("video");
+
+                navigator.getUserMedia(medias, successCallback, errorCallback);
+
         }
+
+function successCallback(stream) {
+  video.srcObject = stream;
+};
+
+function errorCallback(err) {
+  alert(err);
+};
+
 });
 
