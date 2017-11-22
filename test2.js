@@ -5,6 +5,7 @@ const medias = {audio : false, video : {
       }},
       video  = document.getElementById("video"),
       canvas = document.getElementById("canvas"),
+      img = document.getElementById('img'),
       ctx    = canvas.getContext("2d");
 
 navigator.getUserMedia(medias, successCallback, errorCallback);
@@ -25,6 +26,6 @@ function draw() {
   ctx.drawImage(video, 0, 0);
 
   img.src = canvas.toDataURL('image/png');
-  
+
   requestAnimationFrame(draw);
 }
