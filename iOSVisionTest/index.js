@@ -47,9 +47,9 @@ var sendFacePP = function(canvas, func, errFunc){
 
 var renderStart = function() {
 //          if (localMediaStream) {
-//                  var canvas = document.getElementById('canvas');
+                  var canvas = document.getElementById('canvas');
                   //canvasの描画モードを2sに
-  //                var ctx = canvas.getContext('2d');                                                                                                                                        
+                  var ctx = canvas.getContext('2d');                                                                                                                                        
                   var img = document.getElementById('img');
                   var sending = false
                   var faceData = { "responses" : [] };
