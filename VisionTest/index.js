@@ -90,7 +90,7 @@ $(function() {
                 }
         };
         //videoタグを取得
-        var video = document.getElementById('camera');
+        var video = document.getElementById('video');
         //カメラが起動できたかのフラグ
         var localMediaStream = null;
         //カメラ使えるかチェック
