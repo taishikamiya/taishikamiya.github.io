@@ -118,7 +118,8 @@
                         var numdiv = document.getElementById(num);
                         var msg = document.createElement('div');
 //                        msg.innerHTML = result.text;
-                        msg.innerHTML = result.Confidence();
+                        msg.innerHTML = result.text;
+                        msg.innerHTML = result.words(1);
                         numdiv.appendChild(msg);
                         num += 1;
                     });
